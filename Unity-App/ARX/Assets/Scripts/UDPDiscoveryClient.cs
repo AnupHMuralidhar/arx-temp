@@ -52,8 +52,18 @@ public class UDPDiscoveryClient : MonoBehaviour
                     if (response == responseMessage)
                     {
                         Debug.Log($"Received backend response from {listenEndpoint.Address}");
-                        // You now have backend IP here: listenEndpoint.Address
-                        // TODO: Connect WebSocket client to this IP next
+                        
+                        // Find WebSocketClient safely
+                        var wsClient = FindFirstObjectByType<WebSocketClient>();
+                        if (wsClient != null)
+                        {
+                            string backendIP = listenEndpoint.Address.ToString();
+                            wsClient.Connect(backendIP);  // 👈 matches new method name
+                        }
+                        else
+                        {
+                            Debug.LogWarning("⚠️ WebSocketClient not found in scene!");
+                        }
                         break;
                     }
                 }

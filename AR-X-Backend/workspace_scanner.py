@@ -4,20 +4,16 @@ import numpy as np
 import time
 from ultralytics import YOLO
 
-# Load improved model
-model = YOLO('yolov8m.pt')  # Accurate but fast enough on PC
-
-# Throttle detection
-last_detection_time = 0
-last_logged_objects = []
-skip_counter = 0
-detection_interval = 1.5  # seconds
+# Load improved YOLOv8 model
+model = YOLO('yolov8m.pt')  # Medium size, accurate but not too slow
 
 # Only care about these objects
-workspace_labels = {
-    "laptop", "keyboard", "mouse", "tv", "monitor", "cell phone",
-    "table", "chair", "couch", "bed", "desk", "refrigerator", "wall"
-}
+workspace_labels = {"laptop", "keyboard", "mouse", "tv", "monitor"}
+
+# State
+last_detection_time = 0
+detection_interval = 1.0  # seconds
+scan_completed = False  # Stop scanning once relevant object found
 
 def decode_image(base64_data):
     try:
@@ -40,17 +36,16 @@ def extract_workspace_objects(results):
     return list(found)
 
 def detect_relevant_objects(base64_data):
-    global last_detection_time, last_logged_objects, skip_counter
+    global last_detection_time, scan_completed
     now = time.time()
 
-    # Throttle detection
-    if now - last_detection_time < detection_interval:
-        skip_counter += 1
-        if skip_counter % 10 == 0:
-            print("⏳ Skipping detection...")
-        return []
+    if scan_completed:
+        return []  # Stop scanning after first detection
 
-    skip_counter = 0  # reset
+    if now - last_detection_time < detection_interval:
+        return []  # Throttle
+
+    last_detection_time = now
     img = decode_image(base64_data)
     if img is None:
         return []
@@ -61,10 +56,8 @@ def detect_relevant_objects(base64_data):
         print("❌ Detection failed:", e)
         return []
 
-    last_detection_time = now
     relevant = extract_workspace_objects(results)
-
-    if relevant != last_logged_objects:
-        print(f"🔍 Workspace objects: {', '.join(relevant) if relevant else 'None'}")
-        last_logged_objects = relevant
+    if relevant:
+        print(f"🔍 Workspace objects detected: {', '.join(relevant)}")
+        scan_completed = True  # Stop further scanning
     return relevant

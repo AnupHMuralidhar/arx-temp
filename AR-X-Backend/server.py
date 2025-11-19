@@ -20,13 +20,10 @@ async def udp_discovery_server():
     while True:
         try:
             data, addr = await loop.sock_recvfrom(sock, 1024)
-            print(f"📩 UDP packet from {addr}: {data}")
             if data == DISCOVERY_MESSAGE:
-                print(f"📡 Responding to discovery from {addr}")
                 await loop.sock_sendto(sock, RESPONSE_MESSAGE, addr)
         except Exception as e:
             print(f"⚠️ UDP error: {e}")
-
 
 # ===================== WEBSOCKET SERVER =====================
 connected_clients = set()
@@ -34,43 +31,41 @@ connected_clients = set()
 async def ws_handler(websocket):
     print(f"🔌 Unity connected from {websocket.remote_address}")
     connected_clients.add(websocket)
+    pose_sent = False  # Track if POSE has been sent
+
     try:
         async for message in websocket:
-            if message.startswith("IMG:"):
+            if message.startswith("IMG:") and not pose_sent:
                 base64_data = message[4:]
+                print(f"📩 Received camera frame (size: {len(base64_data)} bytes)")
+
                 relevant_objects = detect_relevant_objects(base64_data)
 
-                if relevant_objects is not None:
-                    # Send detected labels back
+                if relevant_objects:
+                    # Send detected labels
                     response = "SCAN:" + ",".join(relevant_objects)
                     await websocket.send(response)
+                    print(f"🔍 Workspace objects detected: {', '.join(relevant_objects)}")
 
-                    if any(obj in relevant_objects for obj in ["laptop", "tv", "monitor", "keyboard", "mouse"]):
-                        # ✅ Correct message format expected by Unity
-                        mock_position = {
-                            "x": 0.2,
-                            "y": 0.0,
-                            "z": 1.5
-                        }
-                        json_payload = json.dumps(mock_position)
-                        await websocket.send(f"POSE:{json_payload}")
+                    # Send a single mock position for first relevant object
+                    mock_position = {"x": 0.2, "y": 0.0, "z": 1.5}
+                    await websocket.send(f"POSE:{json.dumps(mock_position)}")
+                    pose_sent = True  # Stop further POSE updates
             else:
-                print(f"📩 Message from Unity: {message}")
+                # Only print non-image messages
+                if not message.startswith("IMG:"):
+                    print(f"📩 Message from Unity: {message}")
+
     except websockets.exceptions.ConnectionClosed:
         print("❌ Unity disconnected")
     finally:
         connected_clients.remove(websocket)
 
-
 async def main():
-    # Start both UDP + WebSocket together
-    ws_server = await websockets.serve(ws_handler, "0.0.0.0", 8765, max_size=4 * 1024 * 1024)
-    print("🌐 WebSocket server running at ws://0.0.0.0:8765")
-
+    ws_server = await websockets.serve(ws_handler, "0.0.0.0", 8765, max_size=4*1024*1024)
     udp_task = asyncio.create_task(udp_discovery_server())
-
+    print("🌐 WebSocket server running at ws://0.0.0.0:8765")
     await asyncio.gather(ws_server.wait_closed(), udp_task)
-
 
 if __name__ == "__main__":
     try:

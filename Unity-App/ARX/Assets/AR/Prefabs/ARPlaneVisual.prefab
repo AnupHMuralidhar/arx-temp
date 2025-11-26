@@ -135,7 +135,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3682b4276dd34654e8a50e5320208c60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  videoClip: {fileID: 32900000, guid: 6a27948a11c0fa24bb6fb1f3b6e5c897, type: 3}
+  videoClip: {fileID: 32900000, guid: d1053727d16349146a92be0e5f1b1e6d, type: 3}
   monitorMaterial: {fileID: 2100000, guid: 3d49361958803ba4e912b72f815660b7, type: 2}
   materialTextureName: _MainTex
   maxHeight: 0.6

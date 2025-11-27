@@ -3,7 +3,7 @@ import websockets
 import socket
 import json
 from workspace_scanner import detect_relevant_objects
-
+from hand_scanner import detect_gesture
 # ===================== UDP DISCOVERY =====================
 DISCOVERY_PORT = 37020
 DISCOVERY_MESSAGE = b"ARX_DISCOVERY"
@@ -35,10 +35,24 @@ async def ws_handler(websocket):
 
     try:
         async for message in websocket:
+            if message.startswith("IMG:"):
+                base64_data = message[4:]
+                print(f"📩 Received camera frame (size: {len(base64_data)} bytes)")
+                gesture = detect_gesture(base64_data)
+                
+                # 2. Send command ONLY if a valid gesture is found
+                print(f"🤚 Detected Gesture: {gesture}")
+                if gesture in ["PLAY", "PAUSE"]:
+                    print(f"👉 Sending Gesture: {gesture}")
+                    await websocket.send(f"GESTURE:{gesture}")
+
+
+
+
             if message.startswith("IMG:") and not pose_sent:
                 base64_data = message[4:]
                 print(f"📩 Received camera frame (size: {len(base64_data)} bytes)")
-
+                
                 relevant_objects = detect_relevant_objects(base64_data)
 
                 if relevant_objects:

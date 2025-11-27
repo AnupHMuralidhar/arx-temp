@@ -179,10 +179,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 019769a7194ab9545abb7980d6066e29, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  backendIP: 192.168.0.174
   backendPort: 8765
-  autoConnectOnStart: 1
   planeController: {fileID: 1672241332}
+  floatingButtonPrefab: {fileID: 0}
+  buttonDistanceFromCamera: 0.5
+  targetMonitor: {fileID: 0}
+  noteController: {fileID: 0}
 --- !u!1 &332619041
 GameObject:
   m_ObjectHideFlags: 0
@@ -387,6 +389,53 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 1
+--- !u!1 &773190229
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 773190231}
+  - component: {fileID: 773190230}
+  m_Layer: 0
+  m_Name: NoteManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &773190230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 773190229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 039a834a1e746dd439b9ae60710713e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  notePrefab: {fileID: 4449783057071573051, guid: d44fafb9b3f98b349804553962534f0e, type: 3}
+  noteScale: {x: 0.15, y: 0.15, z: 1}
+  spawnDistance: 0.5
+--- !u!4 &773190231
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 773190229}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 464.5, y: 194, z: 96.366776}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &823090594
 GameObject:
   m_ObjectHideFlags: 0
@@ -832,6 +881,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   planePrefab: {fileID: 1964602097}
+  planeScale: {x: 1.2, y: 0.6, z: 0.02}
+  visualOffset: {x: 0.04, y: 0, z: 0.1}
 --- !u!4 &1672241333
 Transform:
   m_ObjectHideFlags: 0
@@ -985,3 +1036,4 @@ SceneRoots:
   - {fileID: 4435323038978791229}
   - {fileID: 240557639}
   - {fileID: 1672241333}
+  - {fileID: 773190231}

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Video;
 
@@ -76,6 +77,24 @@ public class VirtualMonitor : MonoBehaviour
         {
             videoPlayer.Stop();
             Destroy(videoPlayer);
+        }
+    }
+
+    public void PauseVideo()
+    {
+        if (videoPlayer != null && videoPlayer.isPlaying)
+        {
+            Debug.Log("⏸ VirtualMonitor: Pausing Video");
+            videoPlayer.Pause();
+        }
+    }
+
+    public void PlayVideo()
+    {
+        if (videoPlayer != null && !videoPlayer.isPlaying)
+        {
+            Debug.Log("▶ VirtualMonitor: Playing Video");
+            videoPlayer.Play();
         }
     }
 }

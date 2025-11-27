@@ -19,35 +19,40 @@ def decode_image(base64_data):
 
 def detect_gesture(base64_data):
     img = decode_image(base64_data)
-    if img is None:
-        return "NONE"
+    if img is None: return "NONE"
 
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = hands.process(img_rgb)
 
     if results.multi_hand_landmarks:
-        # Get the first hand found
-        hand_landmarks = results.multi_hand_landmarks[0]
+        lm = results.multi_hand_landmarks[0].landmark
         
-        # --- LOGIC: CHECK FOR PINCH (PAUSE) ---
-        # Landmark 4 is Thumb Tip, Landmark 8 is Index Tip
-        thumb_tip = hand_landmarks.landmark[4]
-        index_tip = hand_landmarks.landmark[8]
+        # --- GEOMETRY CALCULATIONS ---
+        
+        # 1. Check if Index and Middle fingers are extended (Tips above PIP joints)
+        # Note: In image coords, Y decreases as you go UP. So Tip.y < Pip.y means finger is UP.
+        index_up = lm[8].y < lm[6].y
+        middle_up = lm[12].y < lm[10].y
+        
+        # 2. Check if Ring and Pinky are curled (Tips below PIP joints)
+        ring_down = lm[16].y > lm[14].y
+        pinky_down = lm[20].y > lm[18].y
+        
+        # 3. Calculate distance for Pinch (existing logic)
+        pinch_dist = math.sqrt((lm[4].x - lm[8].x)**2 + (lm[4].y - lm[8].y)**2)
 
-        # Calculate distance between thumb and index
-        distance = math.sqrt(
-            (thumb_tip.x - index_tip.x)**2 + 
-            (thumb_tip.y - index_tip.y)**2 + 
-            (thumb_tip.z - index_tip.z)**2
-        )
+        # --- GESTURE CLASSIFICATION ---
 
-        # If fingers are very close (< 0.05), it's a PINCH/FIST
-        if distance < 0.05:
+        # ✌️ PEACE SIGN -> CREATE NOTE
+        if index_up and middle_up and ring_down and pinky_down:
+            return "NOTE"
+
+        # ✊ PINCH -> PAUSE
+        elif pinch_dist < 0.05:
             return "PAUSE"
         
-        # --- LOGIC: CHECK FOR OPEN PALM (PLAY) ---
-        # If distance is far, we assume hand is open
-        elif distance > 0.1:
+        # ✋ OPEN PALM -> PLAY (All fingers likely up)
+        elif index_up and middle_up and not ring_down and not pinky_down:
             return "PLAY"
 
     return "NONE"

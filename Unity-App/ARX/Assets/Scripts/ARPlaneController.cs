@@ -4,79 +4,70 @@ public class ARPlaneController : MonoBehaviour
 {
     [Header("Prefab Settings")]
     public GameObject planePrefab;                     // Assign prefab in Inspector
-    public Vector3 planeScale = new Vector3(1.2f, 0.6f, 0.02f); // Bigger rectangle (1.2m x 0.6m)
-    public Vector3 visualOffset = new Vector3(0.04f, 0f, 0.1f); // 4cm right, 10cm forward
+    public Vector3 planeScale = new Vector3(1.2f, 0.6f, 0.02f); 
+    public Vector3 visualOffset = new Vector3(0.04f, 0f, 0.1f); 
 
     private GameObject currentPlane;
-    private Vector3 lastDetectedPosition;
     private bool planeSpawned = false;
 
-    public void SetDetectedPosition(Vector3 localCameraPos)
+    // 🟢 CALLED BY WEBSOCKET: Accepts World Position directly
+    public void SetDetectedPosition(Vector3 worldPosition)
     {
-        lastDetectedPosition = Camera.main.transform.TransformPoint(localCameraPos);
-        Debug.Log("📍 Detected position (world-space): " + lastDetectedPosition);
+        // 🟢 LOCK: If we already spawned it, ignore new updates from the server.
+        // This prevents the object from jumping around or following your face.
+        if (planeSpawned) return; 
 
-        SpawnAtDetectedPosition();
+        // Apply the visual offset relative to where you are looking
+        Vector3 offsetWorld = Camera.main.transform.TransformVector(visualOffset);
+        Vector3 finalPosition = worldPosition + offsetWorld;
+
+        Debug.Log("📍 Spawning Plane at World Pos: " + finalPosition);
+        SpawnPlane(finalPosition);
     }
 
-    public void SpawnAtDetectedPosition()
+    private void SpawnPlane(Vector3 position)
     {
-        if (planePrefab == null)
-        {
-            Debug.LogWarning("⚠️ Plane prefab not assigned!");
-            return;
-        }
+        if (planePrefab == null) return;
 
-        Vector3 offsetWorld = Camera.main.transform.TransformVector(visualOffset);
-        Vector3 spawnPosition = lastDetectedPosition + offsetWorld;
+        // Instantiate only once
+        if (currentPlane != null) Destroy(currentPlane);
 
-        if (currentPlane != null)
-            Destroy(currentPlane);
+        currentPlane = Instantiate(planePrefab, position, Quaternion.identity);
 
-        currentPlane = Instantiate(planePrefab, spawnPosition, Quaternion.identity);
-
-        // ✅ Apply scale to the prefab root AND all children (handles nested meshes)
+        // Apply Scaling to parent and reset children (prevents distortion)
         currentPlane.transform.localScale = planeScale;
         foreach (Transform child in currentPlane.GetComponentsInChildren<Transform>())
         {
-            child.localScale = Vector3.one; // reset child scale so parent scale works
+            child.localScale = Vector3.one; 
         }
 
-        // Face camera
+        // Face the user initially
         currentPlane.transform.LookAt(Camera.main.transform);
-        currentPlane.transform.Rotate(0f, 180f, 0f);
+        currentPlane.transform.Rotate(0f, 180f, 0f); 
 
         currentPlane.SetActive(true);
         planeSpawned = true;
-
-        Debug.Log($"✅ Plane spawned at {spawnPosition} with scale {planeScale}");
     }
 
-    public void SpawnPlane()
-    {
-        if (!planeSpawned)
-            SpawnAtDetectedPosition();
-    }
+    // --- UI HELPER METHODS (Kept from your original script) ---
 
     public void HidePlane()
     {
-        if (!planeSpawned)
-            return;
-
-        if (currentPlane != null)
-            Destroy(currentPlane);
-
-        currentPlane = null;
+        if (currentPlane != null) Destroy(currentPlane);
         planeSpawned = false;
-
-        Debug.Log("🛑 Plane hidden/destroyed");
     }
 
     public void TogglePlane()
     {
-        if (planeSpawned)
-            HidePlane();
-        else
-            SpawnPlane();
+        if (planeSpawned) HidePlane();
+        // Note: We can't "Show" it again without a position from the AI, 
+        // so Toggle only really works to hide it.
+    }
+
+    // Call this to force the AI to scan again (e.g. "Reset" button)
+    public void ResetPlane()
+    {
+        HidePlane();
+        Debug.Log("🔄 Plane reset, waiting for AI detection...");
     }
 }

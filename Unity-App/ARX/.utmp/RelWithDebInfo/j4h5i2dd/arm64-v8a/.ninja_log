@@ -1,10 +1,19 @@
 # ninja log v5
 150	5094	7858830201875010	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	8c6841989fc618db
 194	5109	7858830201943065	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	64ba81a88e217232
-65	5143	7858830202116670	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	9c13e96aeb78dea6
-261	5155	7858830202361469	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	bd9d0ff566989c01
-25	5187	7858830203005606	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	399f3fd73f053e1b
 337	5409	7858830205382447	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	4cd3ae569954bea9
+65	5143	7858830202116670	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	9c13e96aeb78dea6
+25	5187	7858830203005606	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	399f3fd73f053e1b
+261	5155	7858830202361469	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	bd9d0ff566989c01
 93	5651	7858830207843274	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	1593aea8d4671d0a
 1	5941	7858830210737756	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	37df38f0365abec3
 5941	6688	7858830218109274	C:/Users/adria/OneDrive/Desktop/projects/arx/arx-temp/Unity-App/ARX/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/j4h5i2dd/obj/arm64-v8a/libgame.so	db77c512ff98ed37
+304	3056	7859403688998061	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	64ba81a88e217232
+24	3140	7859403689761081	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	9c13e96aeb78dea6
+335	3302	7859403691797977	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	399f3fd73f053e1b
+743	3576	7859403695018208	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	8c6841989fc618db
+392	3586	7859403694939572	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	bd9d0ff566989c01
+357	3722	7859403696506719	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	1593aea8d4671d0a
+591	4107	7859403700561102	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	4cd3ae569954bea9
+868	4344	7859403702972920	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	37df38f0365abec3
+4345	5256	7859403711820203	C:/Users/adria/OneDrive/Desktop/projects/arx/arx-temp/Unity-App/ARX/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/j4h5i2dd/obj/arm64-v8a/libgame.so	db77c512ff98ed37

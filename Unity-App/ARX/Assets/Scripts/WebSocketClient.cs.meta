@@ -1,2 +1,15 @@
 fileFormatVersion: 2
 guid: 019769a7194ab9545abb7980d6066e29
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - stickyNotePrefab: {fileID: 8409376392077226792, guid: e58fff1f5636fae40b189e08154b7dce, type: 3}
+  - planeController: {instanceID: 0}
+  - floatingButtonPrefab: {instanceID: 0}
+  - targetMonitor: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

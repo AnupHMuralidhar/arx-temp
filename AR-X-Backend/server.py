@@ -37,12 +37,11 @@ async def ws_handler(websocket):
         async for message in websocket:
             if message.startswith("IMG:"):
                 base64_data = message[4:]
-                print(f"📩 Received camera frame (size: {len(base64_data)} bytes)")
                 gesture = detect_gesture(base64_data)
                 
                 # 2. Send command ONLY if a valid gesture is found
                 print(f"🤚 Detected Gesture: {gesture}")
-                if gesture in ["PLAY", "PAUSE"]:
+                if gesture in ["PLAY", "PAUSE","NOTE"]:
                     print(f"👉 Sending Gesture: {gesture}")
                     await websocket.send(f"GESTURE:{gesture}")
 

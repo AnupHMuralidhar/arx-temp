@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a5079b046a3c59a4ea2ef47aa4919918
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - arCamera: {instanceID: 0}
+  - vrRenderTexture: {fileID: 8400000, guid: c0d50ae52c2581049b99e4e377ddf608, type: 2}
+  - standardCanvas: {fileID: 5105338138246633656, guid: 7e1eca678b1420f408a38c96cfd3cd51, type: 3}
+  - vrCanvas: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

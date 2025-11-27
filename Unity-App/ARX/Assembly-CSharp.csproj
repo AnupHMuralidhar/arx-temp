@@ -56,6 +56,7 @@
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Scripts\UDPDiscoveryClient.cs" />
     <Compile Include="Assets\Scripts\ARFloatingButtonController.cs" />
+    <Compile Include="Assets\Scripts\StickyNoteInput.cs" />
     <Compile Include="Assets\Scripts\ARPlaneController.cs" />
     <Compile Include="Assets\Scripts\ARFrameSender.cs" />
     <Compile Include="Assets\Scripts\VirtualMonitor.cs" />

@@ -97,6 +97,18 @@ public class WebSocketClient : MonoBehaviour
                 if (action == "NOTE") SpawnStickyNote();
                 HandleMonitorControl(action);
             }
+            if (message.StartsWith("KEY:"))
+            {
+                string key = message.Substring(4); // Remove "KEY:"
+                
+                if (noteController == null) noteController = GetComponent<ARNoteController>();
+                if (noteController == null) noteController = FindFirstObjectByType<ARNoteController>();
+
+                if (noteController != null)
+                {
+                    noteController.ReceiveKeystroke(key);
+                }
+            }
         };
 
         await websocket.Connect();
@@ -122,7 +134,7 @@ public class WebSocketClient : MonoBehaviour
         if (noteController != null)
         {
             Debug.Log("✅ Found Controller on: " + noteController.gameObject.name);
-            noteController.SpawnNote();
+            noteController.ToggleNote();
         }
         else
         {

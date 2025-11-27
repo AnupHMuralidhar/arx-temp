@@ -4,6 +4,8 @@ import socket
 import json
 from workspace_scanner import detect_relevant_objects
 from hand_scanner import detect_gesture
+from pynput import keyboard
+import threading
 # ===================== UDP DISCOVERY =====================
 DISCOVERY_PORT = 37020
 DISCOVERY_MESSAGE = b"ARX_DISCOVERY"
@@ -27,7 +29,37 @@ async def udp_discovery_server():
 
 # ===================== WEBSOCKET SERVER =====================
 connected_clients = set()
+# --- KEYBOARD HANDLING ---
 
+
+def on_press(key):
+    try:
+        if hasattr(key, 'char') and key.char:
+            send_key_to_unity(key.char)
+        elif key == keyboard.Key.space:
+            send_key_to_unity(" ")
+        elif key == keyboard.Key.enter:
+            send_key_to_unity("\n")
+        elif key == keyboard.Key.backspace:
+            send_key_to_unity("BACKSPACE")
+    except AttributeError:
+        pass
+
+def send_key_to_unity(char_to_send):
+    # Schedule the async send in the main event loop
+    if connected_clients:
+        # Create a task for every connected client
+        message = f"KEY:{char_to_send}"
+        print(f"⌨️ Sending: {char_to_send}")
+        for ws in connected_clients:
+            asyncio.run_coroutine_threadsafe(ws.send(message), loop)
+
+# Start the listener in a non-blocking thread
+listener = keyboard.Listener(on_press=on_press)
+listener.start()
+
+# Global reference to the loop (set this inside main)
+loop = None
 async def ws_handler(websocket):
     print(f"🔌 Unity connected from {websocket.remote_address}")
     connected_clients.add(websocket)
@@ -75,6 +107,8 @@ async def ws_handler(websocket):
         connected_clients.remove(websocket)
 
 async def main():
+    global loop
+    loop = asyncio.get_running_loop()
     ws_server = await websockets.serve(ws_handler, "0.0.0.0", 8765, max_size=4*1024*1024)
     udp_task = asyncio.create_task(udp_discovery_server())
     print("🌐 WebSocket server running at ws://0.0.0.0:8765")

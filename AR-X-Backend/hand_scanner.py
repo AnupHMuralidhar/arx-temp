@@ -17,6 +17,12 @@ def decode_image(base64_data):
     except Exception as e:
         return None
 
+import math
+
+# Helper function to calculate 2D distance
+def get_dist(p1, p2):
+    return math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2)
+
 def detect_gesture(base64_data):
     img = decode_image(base64_data)
     if img is None: return "NONE"
@@ -27,32 +33,65 @@ def detect_gesture(base64_data):
     if results.multi_hand_landmarks:
         lm = results.multi_hand_landmarks[0].landmark
         
-        # --- GEOMETRY CALCULATIONS ---
+        # --- 1. ROBUST FINGER STATE DETECTION ---
+        # We compare the distance of the TIP to the WRIST (0) vs the PIP (Middle Joint) to the WRIST.
+        # If Tip is closer to Wrist than the middle joint is, the finger is definitely curled.
         
-        # 1. Check if Index and Middle fingers are extended (Tips above PIP joints)
-        # Note: In image coords, Y decreases as you go UP. So Tip.y < Pip.y means finger is UP.
-        index_up = lm[8].y < lm[6].y
-        middle_up = lm[12].y < lm[10].y
+        # Wrist is landmark 0
+        wrist = lm[0]
         
-        # 2. Check if Ring and Pinky are curled (Tips below PIP joints)
-        ring_down = lm[16].y > lm[14].y
-        pinky_down = lm[20].y > lm[18].y
+        # Check Index (Tip 8, PIP 6)
+        index_curled = get_dist(lm[8], wrist) < get_dist(lm[6], wrist)
         
-        # 3. Calculate distance for Pinch (existing logic)
-        pinch_dist = math.sqrt((lm[4].x - lm[8].x)**2 + (lm[4].y - lm[8].y)**2)
+        # Check Middle (Tip 12, PIP 10)
+        middle_curled = get_dist(lm[12], wrist) < get_dist(lm[10], wrist)
+        
+        # Check Ring (Tip 16, PIP 14)
+        ring_curled = get_dist(lm[16], wrist) < get_dist(lm[14], wrist)
+        
+        # Check Pinky (Tip 20, PIP 18)
+        pinky_curled = get_dist(lm[20], wrist) < get_dist(lm[18], wrist)
+        
+        # Fist Check (All 4 fingers curled)
+        fingers_are_fist = index_curled and middle_curled and ring_curled and pinky_curled
 
-        # --- GESTURE CLASSIFICATION ---
+        # Thumb State (Tip 4, IP 3, MCP 2)
+        # Thumbs are tricky. We check if the tip is "far out" from the index knuckle.
+        # Dist from Thumb Tip(4) to Index Knuckle(5) vs Dist from Thumb Knuckle(2) to Index Knuckle(5)
+        thumb_extended = get_dist(lm[4], lm[5]) > get_dist(lm[3], lm[5])
+        
+        # Pinch Distance (Thumb to Index)
+        pinch_dist = get_dist(lm[4], lm[8])
 
-        # ✌️ PEACE SIGN -> CREATE NOTE
-        if index_up and middle_up and ring_down and pinky_down:
+        # --- 2. DEBUGGING (Uncomment to see what the AI sees!) ---
+        # print(f"I:{index_curled} M:{middle_curled} R:{ring_curled} P:{pinky_curled} | Fist:{fingers_are_fist}")
+
+        # --- 3. CLASSIFY GESTURES ---
+
+        # 👍 THUMBS UP -> NEXT
+        # Logic: Fist + Thumb is extended + Thumb Tip is ABOVE Index Knuckle
+        # (Note: In image Y, smaller is higher)
+        if fingers_are_fist and thumb_extended and (lm[4].y < lm[5].y):
+            return "NEXT"
+
+        # 👎 THUMBS DOWN -> PREV
+        # Logic: Fist + Thumb is extended + Thumb Tip is BELOW Pinky Knuckle
+        elif fingers_are_fist and thumb_extended and (lm[4].y > lm[17].y):
+            return "PREV"
+
+        # ✊ PINCH / FIST -> PAUSE
+        # Logic: Either a tight pinch OR a fist where the thumb isn't sticking out
+        elif pinch_dist < 0.05 or (fingers_are_fist and not thumb_extended):
+            return "PAUSE"
+
+        # ✌️ PEACE SIGN -> NOTE
+        # Logic: Index & Middle Extended, Ring & Pinky Curled
+        elif (not index_curled) and (not middle_curled) and ring_curled and pinky_curled:
             return "NOTE"
 
-        # ✊ PINCH -> PAUSE
-        elif pinch_dist < 0.05:
-            return "PAUSE"
-        
-        # ✋ OPEN PALM -> PLAY (All fingers likely up)
-        elif index_up and middle_up and not ring_down and not pinky_down:
+        # ✋ OPEN PALM -> PLAY
+        # Logic: All fingers extended (Not curled)
+        elif not (index_curled or middle_curled or ring_curled or pinky_curled):
             return "PLAY"
 
     return "NONE"

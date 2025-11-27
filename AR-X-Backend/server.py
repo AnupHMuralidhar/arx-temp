@@ -73,7 +73,7 @@ async def ws_handler(websocket):
                 
                 # 2. Send command ONLY if a valid gesture is found
                 print(f"🤚 Detected Gesture: {gesture}")
-                if gesture in ["PLAY", "PAUSE","NOTE"]:
+                if gesture in ["PLAY", "PAUSE","NOTE","NEXT","PREV"]:
                     print(f"👉 Sending Gesture: {gesture}")
                     await websocket.send(f"GESTURE:{gesture}")
 

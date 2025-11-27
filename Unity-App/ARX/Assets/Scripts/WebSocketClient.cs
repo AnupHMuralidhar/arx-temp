@@ -95,6 +95,8 @@ public class WebSocketClient : MonoBehaviour
                 
                 // Call the new function to control the monitor
                 if (action == "NOTE") SpawnStickyNote();
+                else if (action == "NEXT") HandleNextNote();
+                else if (action == "PREV") HandlePrevNote();
                 HandleMonitorControl(action);
             }
             if (message.StartsWith("KEY:"))
@@ -113,7 +115,48 @@ public class WebSocketClient : MonoBehaviour
 
         await websocket.Connect();
     }
-    void SpawnStickyNote()
+    private void EnsureNoteController()
+    {
+        if (noteController == null)
+        {
+            noteController = GetComponent<ARNoteController>();
+            if (noteController == null) noteController = FindFirstObjectByType<ARNoteController>();
+        }
+    }
+
+    // 🟢 1. TOGGLE STACK (Peace Sign)
+    void HandleToggleNote()
+    {
+        EnsureNoteController();
+        if (noteController != null)
+        {
+            Debug.Log("✌️ Gesture: Toggle Stack");
+            noteController.ToggleStack();
+        }
+        else Debug.LogError("❌ ARNoteController missing!");
+    }
+
+    // 🟢 2. NEXT NOTE (Thumbs Up)
+    void HandleNextNote()
+    {
+        EnsureNoteController();
+        if (noteController != null)
+        {
+            Debug.Log("👍 Gesture: Next Note");
+            noteController.TryGoNext();
+        }
+    }
+
+    // 🟢 3. PREV NOTE (Thumbs Down)
+    void HandlePrevNote()
+    {
+        EnsureNoteController();
+        if (noteController != null)
+        {
+            Debug.Log("👎 Gesture: Prev Note");
+            noteController.TryGoPrev();
+        }
+    }    void SpawnStickyNote()
     {
         Debug.Log("🔍 Attempting to Spawn Note...");
 
@@ -134,7 +177,7 @@ public class WebSocketClient : MonoBehaviour
         if (noteController != null)
         {
             Debug.Log("✅ Found Controller on: " + noteController.gameObject.name);
-            noteController.ToggleNote();
+            noteController.ToggleStack();
         }
         else
         {

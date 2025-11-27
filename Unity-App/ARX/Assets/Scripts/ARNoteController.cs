@@ -1,132 +1,177 @@
 using UnityEngine;
+using System.Collections.Generic;
+using TMPro;
 
 public class ARNoteController : MonoBehaviour
 {
     [Header("Prefab Settings")]
-    public GameObject notePrefab;                       
-    public Vector3 noteScale = new Vector3(0.15f, 0.15f, 1f); 
-    public float spawnDistance = 0.5f;                  
+    public GameObject notePrefab;
+    public Vector3 noteScale = new Vector3(0.15f, 0.15f, 1f);
+    public float spawnDistance = 0.5f;
+    public float gestureCooldown = 1.5f;
 
-    [Header("Settings")]
-    public float toggleCooldown = 2.0f; // Wait 2 seconds before allowing another toggle
+    // Visible in Inspector for debugging
+    [SerializeField] private List<GameObject> allNotes = new List<GameObject>();
+    [SerializeField] private int currentIndex = -1;
+    private float lastGestureTime = 0f;
 
-    // 🔒 STATIC: Shared by ALL instances of this script in the scene
-    private static GameObject currentNoteInstance;
-    private static float lastToggleTime = 0f;
-
-    // 🟢 CALLED BY WEBSOCKET CLIENT
-    public void ToggleNote()
+    // ✌️ PEACE SIGN: Show/Hide the Stack
+    public void ToggleStack()
     {
-        // 1. Cooldown Check: Prevent "Machine Gun" toggling
-        if (Time.time - lastToggleTime < toggleCooldown)
+        Debug.Log($"⚡ [ToggleStack] Triggered. Time: {Time.time}");
+
+        if (Time.time - lastGestureTime < gestureCooldown)
         {
-            return; // Too soon! Ignore this gesture.
+            Debug.LogWarning($"⏳ Cooldown active. Wait {gestureCooldown - (Time.time - lastGestureTime)}s");
+            return;
+        }
+        lastGestureTime = Time.time;
+
+        // 1. Empty Stack?
+        if (allNotes.Count == 0)
+        {
+            Debug.Log("📂 Stack is empty. Spawning the very first note...");
+            SpawnNewNote();
+            return;
         }
 
-        // Update the timer
-        lastToggleTime = Time.time;
+        GameObject currentNote = allNotes[currentIndex];
 
-        // 2. Logic: Create or Toggle
-        if (currentNoteInstance == null)
+        if (currentNote.activeSelf)
         {
-            SpawnNewNote();
+            // VISIBLE -> HIDE
+            currentNote.SetActive(false);
+            Debug.Log($"🙈 Stack Hidden. (Hiding Note #{currentIndex + 1})");
         }
         else
         {
-            if (currentNoteInstance.activeSelf)
+            // HIDDEN -> SHOW
+            TeleportToCamera(currentNote);
+            currentNote.SetActive(true);
+            Debug.Log($"👀 Stack Opened. Showing Note #{currentIndex + 1}");
+        }
+    }
+
+    // 👍 THUMBS UP: Next Page or New Page
+    public void TryGoNext()
+    {
+        Debug.Log($"⚡ [TryGoNext] Triggered.");
+
+        if (Time.time - lastGestureTime < gestureCooldown) return;
+        if (allNotes.Count == 0)
+        {
+            Debug.LogError("❌ No notes exist yet. Use Peace Sign first.");
+            return;
+        }
+
+        lastGestureTime = Time.time;
+        GameObject currentNote = allNotes[currentIndex];
+
+        if (!currentNote.activeSelf)
+        {
+            Debug.Log("⚠️ Note was hidden. Opening stack instead.");
+            ToggleStack();
+            return;
+        }
+
+        // CASE A: Just flipping pages
+        if (currentIndex < allNotes.Count - 1)
+        {
+            Debug.Log($"👉 Moving from Note {currentIndex + 1} to Note {currentIndex + 2}");
+            SwitchToIndex(currentIndex + 1);
+        }
+        // CASE B: At the end. Need new note?
+        else
+        {
+            // Check content
+            var inputField = currentNote.GetComponentInChildren<TMP_InputField>();
+            string content = inputField != null ? inputField.text : "";
+
+            Debug.Log($"📝 Checking Note #{currentIndex + 1} content: '{content}'");
+
+            if (!string.IsNullOrWhiteSpace(content) && content != $"Note #{currentIndex + 1}")
             {
-                // Visible -> Hide
-                currentNoteInstance.SetActive(false);
-                Debug.Log("🙈 Note Hidden");
+                Debug.Log("✅ Note has text. Creating NEW note...");
+                SpawnNewNote();
             }
             else
             {
-                // Hidden -> Show & Move to Face
-                TeleportToCamera(currentNoteInstance);
-                currentNoteInstance.SetActive(true);
-                Debug.Log("👀 Note Resummoned");
+                Debug.Log("⛔ Current note is empty (or default). Not spawning a new one.");
             }
         }
     }
+
+    // 👎 THUMBS DOWN: Previous Page
+    public void TryGoPrev()
+    {
+        Debug.Log($"⚡ [TryGoPrev] Triggered.");
+
+        if (Time.time - lastGestureTime < gestureCooldown) return;
+        if (allNotes.Count == 0) return;
+
+        lastGestureTime = Time.time;
+
+        if (!allNotes[currentIndex].activeSelf)
+        {
+            ToggleStack();
+            return;
+        }
+
+        if (currentIndex > 0)
+        {
+            Debug.Log($"👈 Moving from Note {currentIndex + 1} back to Note {currentIndex}");
+            SwitchToIndex(currentIndex - 1);
+        }
+        else
+        {
+            Debug.Log("⚠️ Already at Note #1. Cannot go back.");
+        }
+    }
+
+    // --- HELPERS ---
 
     private void SpawnNewNote()
     {
-        if (notePrefab == null) 
-        {
-            Debug.LogError("❌ ARNoteController: Prefab missing on " + gameObject.name);
-            return;
-        }
+        Debug.Log("🏗️ INSTANTIATING NEW NOTE PREFAB...");
+
+        if (currentIndex >= 0 && currentIndex < allNotes.Count)
+            allNotes[currentIndex].SetActive(false);
 
         Vector3 spawnPos = Camera.main.transform.position + (Camera.main.transform.forward * spawnDistance);
-        currentNoteInstance = Instantiate(notePrefab, spawnPos, Quaternion.identity);
+        GameObject newNote = Instantiate(notePrefab, spawnPos, Quaternion.identity);
 
-        currentNoteInstance.transform.localScale = noteScale;
-        
-        // Fix children scale
-        foreach (Transform child in currentNoteInstance.GetComponentsInChildren<Transform>())
+        // Setup Scale
+        newNote.transform.localScale = noteScale;
+        foreach (Transform child in newNote.GetComponentsInChildren<Transform>())
         {
-            if (child != currentNoteInstance.transform) child.localScale = Vector3.one; 
+            if (child != newNote.transform) child.localScale = Vector3.one;
         }
 
-        FaceUser(currentNoteInstance);
-        
-        Debug.Log("📝 New Note Created");
-    }
-    // 🟢 CALLED BY WEBSOCKET CLIENT
-    public void ReceiveKeystroke(string key)
-    {
-        Debug.Log($"🎹 Processing Keystroke: '{key}'");
+        FaceUser(newNote);
+        allNotes.Add(newNote);
+        currentIndex = allNotes.Count - 1;
 
-        if (currentNoteInstance == null)
-        {
-            Debug.LogError("❌ FAIL: Note Instance is NULL. (Did you spawn it first?)");
-            return;
-        }
-
-        if (!currentNoteInstance.activeSelf)
-        {
-            Debug.LogWarning("⚠️ Note exists but is hidden. Ignoring key.");
-            return;
-        }
-
-        // Try to find InputField
-        var inputField = currentNoteInstance.GetComponentInChildren<TMPro.TMP_InputField>();
-        
-        // Fallback: Try finding just a Text Mesh Pro object (if you didn't use InputField)
-        var simpleText = currentNoteInstance.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-
+        // --- VISUAL DEBUG: AUTO-NAME THE NOTE ---
+        var inputField = newNote.GetComponentInChildren<TMP_InputField>();
         if (inputField != null)
         {
-            if (key == "BACKSPACE")
-            {
-                if (inputField.text.Length > 0)
-                    inputField.text = inputField.text.Substring(0, inputField.text.Length - 1);
-            }
-            else
-            {
-                inputField.text += key;
-            }
-            
-            // Force Unity to redraw the text immediately
-            inputField.ForceLabelUpdate(); 
-            Debug.Log($"✅ Text Updated! Current Content: '{inputField.text}'");
+            inputField.text = $"Note #{currentIndex + 1}"; // Set default text so you see it change
         }
-        else if (simpleText != null)
-        {
-            // Fallback logic for normal text
-            if (key == "BACKSPACE")
-                simpleText.text = simpleText.text.Substring(0, simpleText.text.Length - 1);
-            else
-                simpleText.text += key;
-                
-            Debug.Log($"✅ Simple Text Updated! Content: '{simpleText.text}'");
-        }
-        else
-        {
-            Debug.LogError("❌ CRITICAL: Could not find 'TMP_InputField' OR 'TextMeshProUGUI' on the note!");
-            Debug.LogError("👉 check your Prefab structure.");
-        }
+
+        Debug.Log($"✅ SUCCESS: Created Note #{currentIndex + 1}. Total Notes: {allNotes.Count}");
     }
+
+    private void SwitchToIndex(int newIndex)
+    {
+        allNotes[currentIndex].SetActive(false); // Hide Old
+        currentIndex = newIndex;
+
+        GameObject newNote = allNotes[currentIndex];
+        TeleportToCamera(newNote);
+        newNote.SetActive(true); // Show New
+        Debug.Log($"🔄 Switched active note to Index {currentIndex}");
+    }
+
     private void TeleportToCamera(GameObject obj)
     {
         obj.transform.position = Camera.main.transform.position + (Camera.main.transform.forward * spawnDistance);
@@ -136,6 +181,28 @@ public class ARNoteController : MonoBehaviour
     private void FaceUser(GameObject obj)
     {
         obj.transform.LookAt(Camera.main.transform);
-        obj.transform.Rotate(0f, 180f, 0f); 
+        obj.transform.Rotate(0f, 180f, 0f);
+    }
+
+    public void ReceiveKeystroke(string key)
+    {
+        Debug.Log($"🎹 Key Received: {key} | Target: Note #{currentIndex + 1}");
+        
+        if (currentIndex < 0 || currentIndex >= allNotes.Count) return;
+        GameObject activeNote = allNotes[currentIndex];
+        if (!activeNote.activeSelf) return;
+
+        var inputField = activeNote.GetComponentInChildren<TMP_InputField>();
+        if (inputField != null)
+        {
+            if (key == "BACKSPACE")
+            {
+                if (inputField.text.Length > 0) inputField.text = inputField.text.Substring(0, inputField.text.Length - 1);
+            }
+            else inputField.text += key;
+
+            inputField.ForceLabelUpdate();
+            inputField.MoveTextEnd(false);
+        }
     }
 }
